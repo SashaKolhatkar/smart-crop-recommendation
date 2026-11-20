@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AgriSense · Field Lab — Smart Crop Recommendation</title>
+  <meta name="description" content="AI crop recommendation console: soil nutrients, pH, temperature, humidity and rainfall analysed by a Random Forest model.">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <script>window.FLASK_MODE = true;</script>
+  <script src="{{ url_for('static', filename='js/crop-data.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/app.js') }}" defer></script>
+</head>
+<body>
+
+  <!-- ===== Top bar ===== -->
+  <nav class="topbar">
+    <div class="wrap">
+      <a class="logo" href="#top"><span class="logo-mark">🌿</span><span>AgriSense<small>Field Lab</small></span></a>
+      <div class="nav" id="nav">
+        <a href="#top" class="active">Overview</a>
+        <a href="#predict">Console</a>
+        <a href="#pipeline">Pipeline</a>
+        <a href="#capabilities">Capabilities</a>
+        <a href="#roadmap">Roadmap</a>
+      </div>
+      <div class="status"><i></i> SYSTEM ONLINE</div>
+      <div class="mode-switch" role="group" aria-label="Theme mode">
+        <button class="mode-btn" data-theme="light" title="Light mode" aria-label="Light mode">☀️</button>
+        <button class="mode-btn" data-theme="dark" title="Dark mode" aria-label="Dark mode">🌙</button>
+        <button class="mode-btn" data-theme="eco" title="Eco mode" aria-label="Eco mode">🌿</button>
+      </div>
+      <button class="menu-btn" id="menu-btn" aria-label="Menu">☰</button>
+    </div>
+  </nav>
+
+  <!-- ===== Briefing ===== -->
+  <header class="wrap brief" id="top">
+    <div>
+      <span class="tag">◈ CROP INTELLIGENCE / v1.0</span>
+      <h1>Soil data in.<br><em>Confidence out.</em></h1>
+      <p>A working lab console for the Smart Crop Recommendation System. Feed it seven field readings; the model returns the crop best matched to your soil and climate — plus a suitability score and practical growing advice.</p>
+    </div>
+    <div class="sensor-card" aria-hidden="true">
+      <div class="row"><span>SENSOR ARRAY</span><b>07 / 07 ACTIVE</b></div>
+      <div class="row"><span>N · P · K</span><b>OK</b></div>
+      <div class="row"><span>pH · TEMP · RH · RAIN</span><b>OK</b></div>
+      <div class="row"><span>INFERENCE ENGINE</span><b id="engine-status">RULE ENGINE</b></div>
+      <div class="wave">
+        <i style="height:40%"></i><i style="height:75%"></i><i style="height:55%"></i><i style="height:90%"></i>
+        <i style="height:65%"></i><i style="height:80%"></i><i style="height:45%"></i><i style="height:95%"></i>
+        <i style="height:60%"></i><i style="height:85%"></i><i style="height:50%"></i><i style="height:70%"></i>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===== Console ===== -->
+  <main class="wrap" id="predict">
+    <div class="workspace">
+
+      <!-- Input console -->
+      <section class="panel">
+        <div class="panel-head">
+          <h2>INPUT CONSOLE <span class="idx">// 01</span></h2>
+          <button class="chip" id="guide-toggle" type="button">? Parameter guide</button>
+        </div>
+        <div class="panel-body">
+          <form id="predict-form" novalidate>
+            <div class="group">
+              <div class="group-label">Soil chemistry</div>
+
+              <div class="param">
+                <div class="pi">⛁</div>
+                <div>
+                  <div class="plabel"><span>Nitrogen</span><small>N · kg/ha</small></div>
+                  <input type="range" id="n-range" min="0" max="200" value="90">
+                </div>
+                <input type="number" id="n-num" min="0" max="200" value="90" aria-label="Nitrogen">
+              </div>
+
+              <div class="param">
+                <div class="pi">◍</div>
+                <div>
+                  <div class="plabel"><span>Phosphorus</span><small>P · kg/ha</small></div>
+                  <input type="range" id="p-range" min="0" max="150" value="45">
+                </div>
+                <input type="number" id="p-num" min="0" max="150" value="45" aria-label="Phosphorus">
+              </div>
+
+              <div class="param">
+                <div class="pi">◇</div>
+                <div>
+                  <div class="plabel"><span>Potassium</span><small>K · kg/ha</small></div>
+                  <input type="range" id="k-range" min="0" max="200" value="50">
+                </div>
+                <input type="number" id="k-num" min="0" max="200" value="50" aria-label="Potassium">
+              </div>
+
+              <div class="param">
+                <div class="pi">◒</div>
+                <div>
+                  <div class="plabel"><span>Soil pH</span><small>0 – 14</small></div>
+                  <input type="range" id="ph-range" min="0" max="14" step="0.1" value="6.5">
+                </div>
+                <input type="number" id="ph-num" min="0" max="14" step="0.1" value="6.5" aria-label="Soil pH">
+              </div>
+            </div>
+
+            <div class="group">
+              <div class="group-label">Climate envelope</div>
+
+              <div class="param">
+                <div class="pi">🌡</div>
+                <div>
+                  <div class="plabel"><span>Temperature</span><small>°C</small></div>
+                  <input type="range" id="temp-range" min="0" max="50" value="28">
+                </div>
+                <input type="number" id="temp-num" min="0" max="50" value="28" aria-label="Temperature">
+              </div>
+
+              <div class="param">
+                <div class="pi">💧</div>
+                <div>
+                  <div class="plabel"><span>Humidity</span><small>% RH</small></div>
+                  <input type="range" id="humidity-range" min="0" max="100" value="80">
+                </div>
+                <input type="number" id="humidity-num" min="0" max="100" value="80" aria-label="Humidity">
+              </div>
+
+              <div class="param">
+                <div class="pi">☂</div>
+                <div>
+                  <div class="plabel"><span>Seasonal rainfall</span><small>mm</small></div>
+                  <input type="range" id="rainfall-range" min="0" max="500" value="200">
+                </div>
+                <input type="number" id="rainfall-num" min="0" max="500" value="200" aria-label="Rainfall">
+              </div>
+            </div>
+
+            <div class="scenarios">
+              <span class="lbl">QUICK SCENARIOS</span>
+              <button class="chip" type="button" data-preset="rice">Rice field</button>
+              <button class="chip" type="button" data-preset="wheat">Wheat field</button>
+              <button class="chip" type="button" data-preset="tomato">Tomato farm</button>
+              <button class="chip" type="button" data-preset="sugarcane">Sugarcane</button>
+            </div>
+
+            <div class="actions">
+              <button type="submit" class="btn btn-primary" id="predict-btn">RUN INFERENCE →</button>
+              <button type="button" class="btn btn-quiet" id="reset-btn">RESET</button>
+            </div>
+            <div class="err" id="form-error" role="alert"></div>
+          </form>
+
+          <div class="drawer" id="guide-drawer">
+            <table>
+              <thead><tr><th>Parameter</th><th>Unit</th><th>Range</th></tr></thead>
+              <tbody id="guide-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- Result deck -->
+      <section class="panel result-panel">
+        <div class="panel-head">
+          <h2>RESULT DECK <span class="idx">// 02</span></h2>
+          <span class="idx">LIVE OUTPUT</span>
+        </div>
+        <div class="result-body">
+          <div id="result-content" aria-live="polite"></div>
+          <div class="engine" id="engine-line">ENGINE: AGRONOMY RULE ENGINE</div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <!-- ===== Pipeline ===== -->
+  <section class="wrap section" id="pipeline">
+    <div class="section-top">
+      <div><span class="tag">PROCESS</span><h2 style="margin-top:10px">From raw reading to field advice</h2></div>
+      <p>Four stages, one prediction.</p>
+    </div>
+    <div class="pipeline">
+      <div class="node"><span class="n-no">STAGE 01</span><span class="n-ic">⌁</span><h3>Acquire</h3><p>N, P, K, pH plus temperature, humidity and rainfall from soil tests or sensors.</p></div>
+      <div class="node"><span class="n-no">STAGE 02</span><span class="n-ic">⌗</span><h3>Preprocess</h3><p>Validate ranges and standardise features so each input carries equal weight.</p></div>
+      <div class="node"><span class="n-no">STAGE 03</span><span class="n-ic">◈</span><h3>Classify</h3><p>Random Forest compares the sample against 22 learned crop profiles.</p></div>
+      <div class="node"><span class="n-no">STAGE 04</span><span class="n-ic">⇢</span><h3>Advise</h3><p>Best crop, ranked alternatives, growing season and an actionable field tip.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Capabilities ===== -->
+  <section class="wrap section" id="capabilities">
+    <div class="section-top">
+      <div><span class="tag">SYSTEM</span><h2 style="margin-top:10px">What this build actually does</h2></div>
+      <p>Core functions from the project README, wired into the console above.</p>
+    </div>
+    <div class="tiles">
+      <div class="tile"><div class="big">22</div><h3>Crop classes</h3><p>Random Forest predicts the most suitable crop from seven soil and climate inputs.</p></div>
+      <div class="tile"><div class="big">FLASK</div><h3>Web interface</h3><p>Same console runs standalone in the browser or as a Flask app with a real ML endpoint.</p></div>
+      <div class="tile"><div class="big">RF</div><h3>Reproducible training</h3><p>Dataset generation, preprocessing, training and testing live in a single script.</p></div>
+      <div class="tile"><div class="big">IoT</div><h3>Sensor-ready</h3><p>Seven-parameter input contract makes live soil sensor integration straightforward.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== Roadmap ===== -->
+  <section class="wrap section" id="roadmap">
+    <div class="section-top">
+      <div><span class="tag">ROADMAP</span><h2 style="margin-top:10px">Future scope</h2></div>
+      <p>Planned extensions from the original project brief.</p>
+    </div>
+    <div class="timeline">
+      <div class="phase"><span class="ph-tag">NEXT / SENSORS</span><h3>IoT integration</h3><p>Stream live soil sensor readings straight into the input console instead of manual entry.</p></div>
+      <div class="phase"><span class="ph-tag">THEN / ACCESS</span><h3>Multi-language &amp; voice support</h3><p>Regional languages and voice input so farmers can use the tool without typing.</p></div>
+      <div class="phase"><span class="ph-tag">THEN / MOBILE</span><h3>Mobile app</h3><p>A native companion for field use with offline predictions.</p></div>
+      <div class="phase"><span class="ph-tag">LATER / MARKET</span><h3>Market-linked recommendations</h3><p>Blend crop suitability with demand and price signals for better income decisions.</p></div>
+    </div>
+    <div class="stack">
+      <span><b>STACK</b> Python</span><span>Flask</span><span>scikit-learn</span><span>Pandas / NumPy</span><span>HTML / CSS / JS</span><span>Matplotlib / Seaborn</span>
+    </div>
+  </section>
+
+  <footer>
+    <div class="wrap"><span>AGRISENSE · SMART CROP RECOMMENDATION SYSTEM</span><span>THEME MODES: LIGHT / DARK / ECO · © 2026 · MIT</span></div>
+  </footer>
+
+</body>
+</html>
